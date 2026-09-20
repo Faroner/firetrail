@@ -17,6 +17,7 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.FIRE_TRAIL.get(), NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.HIGH_FIVE_CLONE.get(), HighFiveCloneRenderer::new);
     }
 
     private ClientModEvents() {}
