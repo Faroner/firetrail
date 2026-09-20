@@ -1,0 +1,91 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+}
+
+group = project.mod_group_id
+version = project.mod_version
+
+base { archivesName = project.mod_id }
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                firetrail { source sourceSets.main }
+            }
+        }
+        client {
+            property 'forge.enabledGameTestNamespaces', project.mod_id
+        }
+        server {
+            property 'forge.enabledGameTestNamespaces', project.mod_id
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    maven { url = "https://code.redspace.io/releases" }
+    maven { url = "https://cursemaven.com" }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    compileOnly fg.deobf("io.redspace:irons_spellbooks:${irons_spells_version}:api")
+    runtimeOnly fg.deobf("io.redspace:irons_spellbooks:${irons_spells_version}")
+    runtimeOnly fg.deobf("io.redspace:irons_lib:${irons_lib_version}")
+
+    // Runtime dependencies used by Iron's Spells 'n Spellbooks.
+    runtimeOnly fg.deobf("curse.maven:geckolib-388172:5602039")
+    runtimeOnly fg.deobf("curse.maven:curios-309927:5500079")
+    runtimeOnly fg.deobf("curse.maven:playeranimator-658587:5636816")
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+        minecraft_version: minecraft_version,
+        minecraft_version_range: minecraft_version_range,
+        forge_version: forge_version,
+        forge_version_range: forge_version_range,
+        loader_version_range: loader_version_range,
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_license: mod_license,
+        mod_version: mod_version,
+        mod_authors: mod_authors,
+        mod_description: mod_description
+    ]
+
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+            'Specification-Title': mod_id,
+            'Specification-Vendor': mod_authors,
+            'Specification-Version': '1',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.jar.archiveVersion,
+            'Implementation-Vendor': mod_authors
+        ])
+    }
+}
+jar.finalizedBy('reobfJar')
