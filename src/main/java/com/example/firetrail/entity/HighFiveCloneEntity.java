@@ -65,7 +65,7 @@ public class HighFiveCloneEntity extends Entity {
             } else if (age <= 11) {
                 distance = 1.0D;
             } else {
-                distance = 1.0D + Math.min(0.9D, (age - 11) / 9.0D * 0.9D);
+                distance = 1.0D + Math.min(0.9D, (age - 11) / 13.0D * 0.9D);
             }
 
             setPos(owner.getX() + look.x * distance,
@@ -79,7 +79,9 @@ public class HighFiveCloneEntity extends Entity {
             spawnAnimationParticles(age);
         }
 
-        if (age >= 20) {
+        // Keep the clone visible a little after the hit so the animation
+        // does not vanish on the exact same tick as the heal.
+        if (age >= 24) {
             discard();
         }
     }
