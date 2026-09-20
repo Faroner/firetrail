@@ -30,6 +30,6 @@ public class HighFiveCloneRenderer extends EntityRenderer<HighFiveCloneEntity> {
 
     @Override
     public net.minecraft.resources.ResourceLocation getTextureLocation(HighFiveCloneEntity entity) {
-        return net.minecraft.resources.new net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/white.png");
+        return net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/white.png");
     }
 }
