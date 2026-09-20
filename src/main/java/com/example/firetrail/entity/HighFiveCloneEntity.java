@@ -57,20 +57,17 @@ public class HighFiveCloneEntity extends Entity {
 
         Entity owner = getOwnerEntity();
         if (owner != null) {
-            // Stay in front of the caster while the little "high-five" animation plays.
-            var look = owner.getLookAngle().normalize();
-            double distance;
-            if (age <= 7) {
-                distance = 1.9D - (age / 7.0D) * 0.9D;
-            } else if (age <= 11) {
-                distance = 1.0D;
-            } else {
-                distance = 1.0D + Math.min(0.9D, (age - 11) / 13.0D * 0.9D);
+            // At the contact moment the real player swings their main hand too,
+            // so the animation looks like a genuine two-sided high-five.
+            if (age == 10 && !level().isClientSide && owner instanceof net.minecraft.world.entity.LivingEntity living) {
+                living.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
             }
 
-            setPos(owner.getX() + look.x * distance,
+            // The clone stays exactly one block in front of the caster.
+            var look = owner.getLookAngle().normalize();
+            setPos(owner.getX() + look.x * 1.0D,
                     owner.getY(),
-                    owner.getZ() + look.z * distance);
+                    owner.getZ() + look.z * 1.0D);
             setYRot(owner.getYRot() + 180.0F);
             setXRot(0.0F);
         }
@@ -79,34 +76,46 @@ public class HighFiveCloneEntity extends Entity {
             spawnAnimationParticles(age);
         }
 
-        // Keep the clone visible a little after the hit so the animation
-        // does not vanish on the exact same tick as the heal.
-        if (age >= 24) {
+        // 1 second cast: the clone is present for the whole cast and
+        // disappears immediately after the high-five moment.
+        if (age >= 19) {
             discard();
         }
     }
 
     private void spawnAnimationParticles(int age) {
-        // Contact moment: a bright magical "high-five" flash.
-        if (age == 11 || age == 12) {
-            for (int i = 0; i < 18; i++) {
+        // The hands meet around age 10-12.
+        if (age == 10 || age == 11) {
+            for (int i = 0; i < 22; i++) {
                 double a = random.nextDouble() * Math.PI * 2.0;
-                double r = random.nextDouble() * 0.55D;
+                double r = random.nextDouble() * 0.45D;
                 level().addParticle(ParticleTypes.END_ROD,
                         getX() + Math.cos(a) * r,
-                        getY() + 1.15D + random.nextDouble() * 0.5D,
+                        getY() + 1.15D + random.nextDouble() * 0.55D,
                         getZ() + Math.sin(a) * r,
-                        Math.cos(a) * 0.04D, 0.06D, Math.sin(a) * 0.04D);
+                        Math.cos(a) * 0.045D, 0.07D, Math.sin(a) * 0.045D);
             }
-            level().addParticle(ParticleTypes.FLASH, getX(), getY() + 1.2D, getZ(), 0, 0, 0);
+            level().addParticle(ParticleTypes.FLASH, getX(), getY() + 1.25D, getZ(), 0, 0, 0);
         }
-        if (age >= 13 && age <= 18 && random.nextFloat() < 0.45F) {
+        if (age >= 12 && age <= 17 && random.nextFloat() < 0.5F) {
             level().addParticle(ParticleTypes.END_ROD,
-                    getX() + (random.nextDouble() - 0.5D) * 0.6D,
+                    getX() + (random.nextDouble() - 0.5D) * 0.7D,
                     getY() + 0.7D + random.nextDouble() * 1.2D,
-                    getZ() + (random.nextDouble() - 0.5D) * 0.6D,
-                    0, 0.02D, 0);
+                    getZ() + (random.nextDouble() - 0.5D) * 0.7D,
+                    0, 0.025D, 0);
         }
+    }
+
+    /**
+     * 0..1 animation progress for the clone's high-five swing.
+     * The hand moves toward the player, reaches the contact point,
+     * then returns.
+     */
+    public float getHighFiveAnimation(float partialTick) {
+        float t = getAge() + partialTick;
+        if (t < 6.0F || t > 16.0F) return 0.0F;
+        float x = (t - 6.0F) / 10.0F;
+        return (float) Math.sin(x * Math.PI);
     }
 
     @Override
