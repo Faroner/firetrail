@@ -25,31 +25,25 @@ public class FireTrailSpell extends AbstractSpell {
             .setMinRarity(SpellRarity.COMMON)
             .setSchoolResource(SchoolRegistry.FIRE_RESOURCE)
             .setMaxLevel(5)
-            .setCooldownSeconds(4)
+            .setCooldownSeconds(5)
             .build();
 
     public FireTrailSpell() {
         this.baseSpellPower = 1;
         this.spellPowerPerLevel = 0;
         this.castTime = 0;
-        this.baseManaCost = 8;
-        this.manaCostPerLevel = 1;
+        this.baseManaCost = 12;
+        this.manaCostPerLevel = 2;
     }
 
     @Override
-    public CastType getCastType() {
-        return CastType.INSTANT;
-    }
+    public CastType getCastType() { return CastType.INSTANT; }
 
     @Override
-    public DefaultConfig getDefaultConfig() {
-        return defaultConfig;
-    }
+    public DefaultConfig getDefaultConfig() { return defaultConfig; }
 
     @Override
-    public ResourceLocation getSpellResource() {
-        return SPELL_ID;
-    }
+    public ResourceLocation getSpellResource() { return SPELL_ID; }
 
     @Override
     public Optional<SoundEvent> getCastFinishSound() {
@@ -60,17 +54,23 @@ public class FireTrailSpell extends AbstractSpell {
     public void onCast(Level level, int spellLevel, LivingEntity entity,
                        CastSource castSource, MagicData playerMagicData) {
         if (!level.isClientSide) {
-            FireTrailEntity trail =
-                    new FireTrailEntity(ModEntities.FIRE_TRAIL.get(), level);
+            FireTrailEntity wave = new FireTrailEntity(ModEntities.FIRE_TRAIL.get(), level);
 
             var look = entity.getLookAngle().normalize();
-            var spawn = entity.getEyePosition().add(look.scale(1.25));
+            var spawn = entity.getEyePosition().add(look.scale(1.5));
 
-            trail.moveTo(spawn.x, spawn.y, spawn.z);
-            trail.setDeltaMovement(look.scale(0.38D));
-            trail.setLifeTicks(80);
+            wave.moveTo(spawn.x, spawn.y, spawn.z);
+            // Fast enough to feel like a wave, but still visible.
+            wave.setDeltaMovement(look.scale(0.65D));
+            // 0.65 blocks/tick × 46 ticks ≈ 30 blocks maximum range.
+            wave.setLifeTicks(46);
+            wave.setOwner(entity);
 
-            level.addFreshEntity(trail);
+            // Each level expands both the impact and the damage.
+            wave.setDamage(5.0F + (spellLevel - 1) * 2.5F);
+            wave.setRadius(2.0F + (spellLevel - 1) * 0.45F);
+
+            level.addFreshEntity(wave);
         }
 
         super.onCast(level, spellLevel, entity, castSource, playerMagicData);
