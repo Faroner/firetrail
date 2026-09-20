@@ -24,12 +24,20 @@ public class HighFiveCloneRenderer extends EntityRenderer<HighFiveCloneEntity> {
         // The clone is a visual copy of the caster. The changing distance creates
         // the approach/contact/retreat motion of the high-five.
         Minecraft.getInstance().getEntityRenderDispatcher().render(
-                owner, 0.0F, partialTick, poseStack, buffer, packedLight);
+                owner,
+                owner.getX() - clone.getX(),
+                owner.getY() - clone.getY(),
+                owner.getZ() - clone.getZ(),
+                owner.getYRot(),
+                partialTick,
+                poseStack,
+                buffer,
+                packedLight);
         poseStack.popPose();
     }
 
     @Override
     public net.minecraft.resources.ResourceLocation getTextureLocation(HighFiveCloneEntity entity) {
-        return net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/white.png");
+        return new net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/white.png");
     }
 }
