@@ -4,6 +4,7 @@ import com.example.firetrail.entity.HighFiveCloneEntity;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,7 +15,9 @@ import com.example.firetrail.FireTrailMod;
 public final class ClientPlayerAnimation {
     @SubscribeEvent
     public static void animateHighFivePlayer(RenderPlayerEvent.Pre event) {
-        AbstractClientPlayer player = event.getEntity();
+        Player eventPlayer = event.getEntity();
+        if (!(eventPlayer instanceof AbstractClientPlayer player)) return;
+
         HighFiveCloneEntity clone = findActiveClone(player);
         if (clone == null) return;
 
