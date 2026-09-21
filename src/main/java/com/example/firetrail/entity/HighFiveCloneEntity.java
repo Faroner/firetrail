@@ -63,11 +63,26 @@ public class HighFiveCloneEntity extends Entity {
                 living.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
             }
 
-            // The clone stays exactly one block in front of the caster.
+            // Smooth three-part choreography:
+            // 1) approach from 1.65 -> 1.0 blocks,
+            // 2) hold still for the high-five,
+            // 3) gently drift back before disappearing.
             var look = owner.getLookAngle().normalize();
-            setPos(owner.getX() + look.x * 1.0D,
+            double distance;
+            if (age <= 8) {
+                float t = smoothStep(age / 8.0F);
+                distance = 1.65D + (1.0D - 1.65D) * t;
+            } else if (age <= 13) {
+                distance = 1.0D;
+            } else {
+                float t = smoothStep(Math.min(1.0F, (age - 13) / 6.0F));
+                distance = 1.0D + 0.55D * t;
+            }
+
+            setPos(owner.getX() + look.x * distance,
                     owner.getY(),
-                    owner.getZ() + look.z * 1.0D);
+                    owner.getZ() + look.z * distance);
+            // Face the player, but do not continuously wobble with tiny look changes.
             setYRot(owner.getYRot() + 180.0F);
             setXRot(0.0F);
         }
@@ -76,11 +91,15 @@ public class HighFiveCloneEntity extends Entity {
             spawnAnimationParticles(age);
         }
 
-        // 1 second cast: the clone is present for the whole cast and
-        // disappears immediately after the high-five moment.
+        // Give the visual exchange a clean finish before the cast completes.
         if (age >= 19) {
             discard();
         }
+    }
+
+    private static float smoothStep(float t) {
+        t = Math.max(0.0F, Math.min(1.0F, t));
+        return t * t * (3.0F - 2.0F * t);
     }
 
     private void spawnAnimationParticles(int age) {
@@ -113,9 +132,22 @@ public class HighFiveCloneEntity extends Entity {
      */
     public float getHighFiveAnimation(float partialTick) {
         float t = getAge() + partialTick;
-        if (t < 6.0F || t > 16.0F) return 0.0F;
-        float x = (t - 6.0F) / 10.0F;
-        return (float) Math.sin(x * Math.PI);
+        // A soft reach: arm rises first, reaches the contact pose,
+        // then eases back instead of snapping.
+        if (t < 5.0F || t > 17.0F) return 0.0F;
+        if (t <= 10.5F) {
+            return smoothStep((t - 5.0F) / 5.5F);
+        }
+        if (t <= 12.5F) {
+            return 1.0F;
+        }
+        return 1.0F - smoothStep((t - 12.5F) / 4.5F);
+    }
+
+    public float getHighFiveReach(float partialTick) {
+        float t = getAge() + partialTick;
+        if (t < 5.0F || t > 13.0F) return 0.0F;
+        return smoothStep(Math.min(1.0F, (t - 5.0F) / 5.5F));
     }
 
     @Override

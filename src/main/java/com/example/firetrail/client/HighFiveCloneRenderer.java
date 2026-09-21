@@ -46,9 +46,11 @@ public class HighFiveCloneRenderer extends EntityRenderer<HighFiveCloneEntity> {
         // Animate only the clone's arm during the high-five.
         // It does not inherit the real player's spell/cast animation.
         float highFive = clone.getHighFiveAnimation(partialTick);
+        // Keep the vanilla swing, but drive it with a smooth curve so the
+        // hand accelerates gently, holds at the contact, then returns.
         fakePlayer.attackAnim = highFive;
         fakePlayer.oAttackAnim = highFive;
-        fakePlayer.swinging = highFive > 0.0F;
+        fakePlayer.swinging = highFive > 0.02F;
         fakePlayer.setSprinting(false);
         fakePlayer.setShiftKeyDown(false);
 
