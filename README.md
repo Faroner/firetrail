@@ -1,49 +1,18 @@
-# Fire Trail — custom Iron's Spells 'n Spellbooks spell
+# FireTrail — Огненный след + Дай пять
 
-Minecraft 1.20.1 / Forge 47.4.0 / Iron's Spells 'n Spellbooks 1.20.1-3.16.3 / Java 17
+Minecraft 1.20.1 / Forge 47.4.0 / Iron's Spells 'n Spellbooks 3.16.3.
 
-## What it does
+## Дай пять
 
-The custom spell `Огненный след`:
-- appears in front of the caster;
-- moves forward for 4 seconds;
-- emits Flame and Smoke particles;
-- has no collision;
-- does not damage entities;
-- does not set blocks or entities on fire.
+Заклинание `firetrail:high_five` создаёт отдельный GeckoLib-клон игрока. Клон плавно появляется и подходит на расстояние 1 блока, поворачивается к игроку, затем GeckoLib-анимация синхронно поднимает его правую руку; настоящий игрок получает зеркальное движение руки через клиентский render hook. В момент контакта появляются частицы и звук, затем клон плавно отходит и растворяется, после чего игрок получает +10 HP.
 
-The spell registry id is:
+## GeckoLib
 
-    firetrail:fire_trail
+Проект использует GeckoLib **4.8.4** для Forge 1.20.1. GeckoLib должен быть доступен как мод в игровой сборке; Iron's Spells 'n Spellbooks также использует GeckoLib.
 
-For testing, Iron's Spells 'n Spellbooks exposes a cast command. Try:
+Ресурсы анимации находятся здесь:
 
-    /iss cast firetrail:fire_trail
+- `assets/firetrail/geo/high_five_clone.geo.json`
+- `assets/firetrail/animations/high_five_clone.animation.json`
 
-If the exact command syntax differs in your installed build, run `/iss` and use its `cast` command help.
-
-## Build
-
-Use JDK 17.
-
-With Gradle installed:
-
-    gradle build
-
-Output:
-
-    build/libs/firetrail-1.0.0.jar
-
-## Runtime dependencies
-
-Your Minecraft instance must already contain Iron's Spells 'n Spellbooks 1.20.1-3.16.3 and its required dependencies.
-
-Known matching dependencies for this 1.20.1 release:
-- Iron's Lib 1.20.1-2.1.0
-- GeckoLib 1.20.1-4.8.4
-- Curios API 5.14.1+1.20.1
-- playerAnimator 1.0.2-rc1+1.20
-
-## Note
-
-The icon in this project is original and generated for this addon. No Iron's Spells 'n Spellbooks assets are included.
+Модель использует кости `root`, `body`, `head`, `right_arm`, `left_arm`, `right_leg`, `left_leg`.

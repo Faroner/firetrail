@@ -15,11 +15,6 @@ import net.minecraftforge.fml.common.Mod;
 )
 public final class ClientModEvents {
     @SubscribeEvent
-    public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(HighFiveCloneModel.LAYER, HighFiveCloneModel::createBodyLayer);
-    }
-
-    @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.FIRE_TRAIL.get(), NoopRenderer::new);
         event.registerEntityRenderer(ModEntities.HIGH_FIVE_CLONE.get(), HighFiveCloneRenderer::new);

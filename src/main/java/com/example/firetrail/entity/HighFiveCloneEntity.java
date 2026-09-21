@@ -7,47 +7,70 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkHooks;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public class HighFiveCloneEntity extends Entity {
+public class HighFiveCloneEntity extends Entity implements GeoEntity {
     private static final EntityDataAccessor<Optional<UUID>> OWNER =
             SynchedEntityData.defineId(HighFiveCloneEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<Integer> AGE =
             SynchedEntityData.defineId(HighFiveCloneEntity.class, EntityDataSerializers.INT);
+    private static final RawAnimation HIGH_FIVE = RawAnimation.begin().thenPlay("animation.high_five_clone.high_five");
+
+    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
 
     public HighFiveCloneEntity(EntityType<? extends HighFiveCloneEntity> type, Level level) {
         super(type, level);
         this.noPhysics = true;
     }
 
-    public void setOwner(UUID uuid) {
-        entityData.set(OWNER, Optional.ofNullable(uuid));
-    }
-
-    public UUID getOwnerUUID() {
-        return entityData.get(OWNER).orElse(null);
-    }
-
+    public void setOwner(UUID uuid) { entityData.set(OWNER, Optional.ofNullable(uuid)); }
+    public UUID getOwnerUUID() { return entityData.get(OWNER).orElse(null); }
     public Entity getOwnerEntity() {
         UUID uuid = getOwnerUUID();
         return uuid == null ? null : level().getPlayerByUUID(uuid);
     }
-
-    public int getAge() {
-        return entityData.get(AGE);
-    }
+    public int getAge() { return entityData.get(AGE); }
+    public float getAnimationSeconds() { return getAge() / 20.0F; }
 
     @Override
     protected void defineSynchedData() {
         entityData.define(OWNER, Optional.empty());
         entityData.define(AGE, 0);
     }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "high_five", 0, this::animationPredicate));
+    }
+
+    private <E extends HighFiveCloneEntity> PlayState animationPredicate(AnimationState<E> state) {
+        float seconds = getAnimationSeconds();
+        if (seconds < 1.35F) {
+            return state.setAndContinue(HIGH_FIVE);
+        }
+        return PlayState.STOP;
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() { return geoCache; }
 
     @Override
     public void tick() {
@@ -57,115 +80,71 @@ public class HighFiveCloneEntity extends Entity {
 
         Entity owner = getOwnerEntity();
         if (owner != null) {
-            // At the contact moment the real player swings their main hand too.
-            // The clone itself stops moving for the contact so neither model jitters.
-            if (age == 10 && !level().isClientSide && owner instanceof net.minecraft.world.entity.LivingEntity living) {
-                living.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
-            }
-
-            // Smooth three-part choreography:
-            // 1) approach from 1.65 -> 1.0 blocks,
-            // 2) hold still for the high-five,
-            // 3) gently drift back before disappearing.
             var look = owner.getLookAngle().normalize();
             double distance;
-            if (age <= 8) {
-                float t = smoothStep(age / 8.0F);
+            if (age <= 9) {
+                double t = smoothStep(age / 9.0D);
                 distance = 1.65D + (1.0D - 1.65D) * t;
-            } else if (age <= 13) {
-                // Exact contact pose: freeze the clone at one block from the player.
+            } else if (age <= 17) {
                 distance = 1.0D;
             } else {
-                float t = smoothStep(Math.min(1.0F, (age - 13) / 6.0F));
+                double t = smoothStep(Math.min(1.0D, (age - 17) / 8.0D));
                 distance = 1.0D + 0.55D * t;
             }
 
-            setPos(owner.getX() + look.x * distance,
-                    owner.getY(),
-                    owner.getZ() + look.z * distance);
-            // Face the player with the owner's current yaw; the contact section is
-            // position-stable so the hand-to-hand pose stays visually locked.
+            setPos(owner.getX() + look.x * distance, owner.getY(), owner.getZ() + look.z * distance);
             setYRot(owner.getYRot() + 180.0F);
             setXRot(0.0F);
-        }
 
-        if (level().isClientSide) {
-            spawnAnimationParticles(age);
-        }
-
-        // Give the visual exchange a clean finish before the cast completes.
-        if (age >= 19) {
-            discard();
-        }
-    }
-
-    private static float smoothStep(float t) {
-        t = Math.max(0.0F, Math.min(1.0F, t));
-        return t * t * (3.0F - 2.0F * t);
-    }
-
-    private void spawnAnimationParticles(int age) {
-        // The hands meet around age 10-12.
-        if (age == 10 || age == 11) {
-            for (int i = 0; i < 22; i++) {
-                double a = random.nextDouble() * Math.PI * 2.0;
-                double r = random.nextDouble() * 0.45D;
-                level().addParticle(ParticleTypes.END_ROD,
-                        getX() + Math.cos(a) * r,
-                        getY() + 1.15D + random.nextDouble() * 0.55D,
-                        getZ() + Math.sin(a) * r,
-                        Math.cos(a) * 0.045D, 0.07D, Math.sin(a) * 0.045D);
+            if (age == 12 && !level().isClientSide && owner instanceof LivingEntity living) {
+                living.swing(InteractionHand.MAIN_HAND, true);
+                level().playSound(null, blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 0.75F, 1.35F);
             }
-            level().addParticle(ParticleTypes.FLASH, getX(), getY() + 1.25D, getZ(), 0, 0, 0);
         }
-        if (age >= 12 && age <= 17 && random.nextFloat() < 0.5F) {
+
+        if (level().isClientSide) spawnParticles(age);
+        if (age == 25 && !level().isClientSide && owner instanceof Player player) {
+            player.heal(10.0F);
+            level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP,
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.85F, 1.15F);
+        }
+
+        if (age >= 26) discard();
+    }
+
+    private void spawnParticles(int age) {
+        if (age == 12 || age == 13) {
+            for (int i = 0; i < 18; i++) {
+                double a = random.nextDouble() * Math.PI * 2;
+                double r = random.nextDouble() * 0.35;
+                level().addParticle(ParticleTypes.END_ROD,
+                        getX() + Math.cos(a) * r, getY() + 1.2 + random.nextDouble() * 0.35,
+                        getZ() + Math.sin(a) * r, Math.cos(a) * 0.025, 0.04, Math.sin(a) * 0.025);
+            }
+            level().addParticle(ParticleTypes.FLASH, getX(), getY() + 1.35, getZ(), 0, 0, 0);
+        }
+        if (age >= 18 && random.nextFloat() < 0.7F) {
             level().addParticle(ParticleTypes.END_ROD,
-                    getX() + (random.nextDouble() - 0.5D) * 0.7D,
-                    getY() + 0.7D + random.nextDouble() * 1.2D,
-                    getZ() + (random.nextDouble() - 0.5D) * 0.7D,
-                    0, 0.025D, 0);
+                    getX() + (random.nextDouble() - 0.5) * 0.5,
+                    getY() + random.nextDouble() * 1.8,
+                    getZ() + (random.nextDouble() - 0.5) * 0.5,
+                    0, 0.03, 0);
         }
     }
 
-    /**
-     * 0..1 animation progress for the clone's high-five swing.
-     * The hand moves toward the player, reaches the contact point,
-     * then returns.
-     */
-    public float getHighFiveAnimation(float partialTick) {
-        float t = getAge() + partialTick;
-        // A soft reach: arm rises first, reaches the contact pose,
-        // then eases back instead of snapping.
-        if (t < 5.0F || t > 17.0F) return 0.0F;
-        if (t <= 10.5F) {
-            return smoothStep((t - 5.0F) / 5.5F);
-        }
-        if (t <= 12.5F) {
-            return 1.0F;
-        }
-        return 1.0F - smoothStep((t - 12.5F) / 4.5F);
+    private static double smoothStep(double x) {
+        x = Math.max(0, Math.min(1, x));
+        return x * x * (3 - 2 * x);
     }
 
-    public float getHighFiveReach(float partialTick) {
-        float t = getAge() + partialTick;
-        if (t < 5.0F || t > 13.0F) return 0.0F;
-        return smoothStep(Math.min(1.0F, (t - 5.0F) / 5.5F));
-    }
-
-    @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    @Override protected void readAdditionalSaveData(CompoundTag tag) {
         entityData.set(AGE, tag.getInt("Age"));
         if (tag.hasUUID("Owner")) setOwner(tag.getUUID("Owner"));
     }
-
-    @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    @Override protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Age", getAge());
         if (getOwnerUUID() != null) tag.putUUID("Owner", getOwnerUUID());
     }
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
+    @Override public Packet<ClientGamePacketListener> getAddEntityPacket() { return NetworkHooks.getEntitySpawningPacket(this); }
 }

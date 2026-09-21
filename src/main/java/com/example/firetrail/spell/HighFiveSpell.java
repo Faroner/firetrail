@@ -78,22 +78,6 @@ public class HighFiveSpell extends AbstractSpell {
     @Override
     public void onCast(Level level, int spellLevel, LivingEntity entity,
                        CastSource castSource, MagicData playerMagicData) {
-        if (!level.isClientSide && entity instanceof Player player) {
-            // The high-five lands after the one-second cast.
-            player.heal(10.0F);
-            level.playSound(null, player.blockPosition(),
-                    SoundEvents.PLAYER_LEVELUP, net.minecraft.sounds.SoundSource.PLAYERS,
-                    0.9F, 1.15F);
-            for (int i = 0; i < 18; i++) {
-                double a = level.random.nextDouble() * Math.PI * 2.0;
-                double r = level.random.nextDouble() * 0.7D;
-                level.addParticle(net.minecraft.core.particles.ParticleTypes.HEART,
-                        player.getX() + Math.cos(a) * r,
-                        player.getY() + 1.0D + level.random.nextDouble() * 1.0D,
-                        player.getZ() + Math.sin(a) * r,
-                        0, 0.04D, 0);
-            }
-        }
         super.onCast(level, spellLevel, entity, castSource, playerMagicData);
     }
 }
