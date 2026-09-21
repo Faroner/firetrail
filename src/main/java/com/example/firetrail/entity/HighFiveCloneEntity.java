@@ -57,8 +57,8 @@ public class HighFiveCloneEntity extends Entity {
 
         Entity owner = getOwnerEntity();
         if (owner != null) {
-            // At the contact moment the real player swings their main hand too,
-            // so the animation looks like a genuine two-sided high-five.
+            // At the contact moment the real player swings their main hand too.
+            // The clone itself stops moving for the contact so neither model jitters.
             if (age == 10 && !level().isClientSide && owner instanceof net.minecraft.world.entity.LivingEntity living) {
                 living.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
             }
@@ -73,6 +73,7 @@ public class HighFiveCloneEntity extends Entity {
                 float t = smoothStep(age / 8.0F);
                 distance = 1.65D + (1.0D - 1.65D) * t;
             } else if (age <= 13) {
+                // Exact contact pose: freeze the clone at one block from the player.
                 distance = 1.0D;
             } else {
                 float t = smoothStep(Math.min(1.0F, (age - 13) / 6.0F));
@@ -82,7 +83,8 @@ public class HighFiveCloneEntity extends Entity {
             setPos(owner.getX() + look.x * distance,
                     owner.getY(),
                     owner.getZ() + look.z * distance);
-            // Face the player, but do not continuously wobble with tiny look changes.
+            // Face the player with the owner's current yaw; the contact section is
+            // position-stable so the hand-to-hand pose stays visually locked.
             setYRot(owner.getYRot() + 180.0F);
             setXRot(0.0F);
         }

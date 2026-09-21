@@ -2,77 +2,59 @@ package com.example.firetrail.client;
 
 import com.example.firetrail.entity.HighFiveCloneEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.authlib.GameProfile;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
 public class HighFiveCloneRenderer extends EntityRenderer<HighFiveCloneEntity> {
-    private RemotePlayer fakePlayer;
-    private GameProfile fakeProfile;
+    private final HighFiveCloneModel model;
 
     public HighFiveCloneRenderer(EntityRendererProvider.Context context) {
         super(context);
         this.shadowRadius = 0.35F;
+        ModelPart root = context.bakeLayer(HighFiveCloneModel.LAYER);
+        this.model = new HighFiveCloneModel(root);
     }
 
     @Override
     public void render(HighFiveCloneEntity clone, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         Entity owner = clone.getOwnerEntity();
-        if (!(owner instanceof Player player) || !(clone.level() instanceof ClientLevel clientLevel)) {
+        if (!(owner instanceof Player player)) {
             return;
         }
 
-        GameProfile profile = player.getGameProfile();
-        if (fakePlayer == null || fakeProfile == null || !fakeProfile.getId().equals(profile.getId())) {
-            fakeProfile = profile;
-            fakePlayer = new RemotePlayer(clientLevel, profile);
+        poseStack.pushPose();
+        // Entity models use the same local coordinate convention as vanilla
+        // humanoids: feet at y=0 and head above the body.
+        poseStack.translate(0.0D, 1.5D, 0.0D);
+        poseStack.scale(-1.0F, -1.0F, 1.0F);
+
+        model.setupAnim(clone, 0.0F, 0.0F,
+                clone.getAge() + partialTick, 0.0F, 0.0F);
+
+        ResourceLocation skin = Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(player.getGameProfile());
+        if (player instanceof AbstractClientPlayer clientPlayer) {
+            skin = clientPlayer.getSkinTextureLocation();
         }
 
-        // The fake player is only a visual model. It is NOT the real player,
-        // so it cannot copy the player's current spell-casting animation.
-        fakePlayer.setPos(clone.getX(), clone.getY(), clone.getZ());
-        fakePlayer.setYRot(clone.getYRot());
-        fakePlayer.setYHeadRot(clone.getYRot());
-        fakePlayer.yBodyRot = clone.getYRot();
-        fakePlayer.yBodyRotO = clone.getYRot();
-        fakePlayer.setXRot(0.0F);
-        // Animate only the clone's arm during the high-five.
-        // It does not inherit the real player's spell/cast animation.
-        float highFive = clone.getHighFiveAnimation(partialTick);
-        // Keep the vanilla swing, but drive it with a smooth curve so the
-        // hand accelerates gently, holds at the contact, then returns.
-        fakePlayer.attackAnim = highFive;
-        fakePlayer.oAttackAnim = highFive;
-        fakePlayer.swinging = highFive > 0.02F;
-        fakePlayer.setSprinting(false);
-        fakePlayer.setShiftKeyDown(false);
-
-        // Freeze normal player movement animation. The clone will only move
-        // because HighFiveCloneEntity changes its position.
-        fakePlayer.walkDist = 0.0F;
-        fakePlayer.walkDistO = 0.0F;
-        fakePlayer.xxa = 0.0F;
-        fakePlayer.zza = 0.0F;
-
-        poseStack.pushPose();
-        // The custom entity renderer is already positioned at the clone's
-        // location, so render the visual player at the local origin.
-        Minecraft.getInstance().getEntityRenderDispatcher().render(
-                fakePlayer,
-                0.0D, 0.0D, 0.0D,
-                clone.getYRot(), partialTick, poseStack, buffer, packedLight);
+        VertexConsumer vertex = buffer.getBuffer(RenderType.entityTranslucent(skin));
+        model.renderToBuffer(poseStack, vertex, packedLight, OverlayTexture.NO_OVERLAY,
+                1.0F, 1.0F, 1.0F, 1.0F);
         poseStack.popPose();
     }
 
     @Override
-    public net.minecraft.resources.ResourceLocation getTextureLocation(HighFiveCloneEntity entity) {
-        return new net.minecraft.resources.ResourceLocation("minecraft", "textures/misc/white.png");
+    public ResourceLocation getTextureLocation(HighFiveCloneEntity entity) {
+        return new ResourceLocation("minecraft", "textures/entity/steve.png");
     }
 }
