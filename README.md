@@ -1,11 +1,17 @@
-# FireTrail — Порождение Тьмы
+# Demon Transformation
 
-Первая простая версия нового заклинания для тестирования идеи превращения в демоническую форму.
+Clean Minecraft 1.20.1 Forge 47.4.0 addon for Iron's Spells 'n Spellbooks 1.20.1-3.16.3.
 
-После применения:
-- скин сразу становится чёрным;
-- глаза становятся ярко-белыми;
-- вокруг игрока появляются тёмные частицы;
-- через 30 секунд обычный скин возвращается.
+This project contains exactly one custom spell: **Demon Transformation**.
 
-Версии: Minecraft 1.20.1, Forge 47.4.0, Iron's Spells 'n Spellbooks 3.16.3, GeckoLib 4.8.4.
+## Spell
+- School: Ender
+- Rarity: Common
+- Max level: 5
+- Mana: 15 + 3 per level
+- Cooldown: 20 seconds
+- Cast type: Instant
+- Transformation duration: 30 seconds
+- Player texture: `assets/demonspell/textures/player/demon.png`
+
+The uploaded player texture is kept unchanged.
