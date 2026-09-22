@@ -46,18 +46,12 @@ repositories {
     maven { url = "https://code.redspace.io/releases" }
     maven { url = "https://cursemaven.com" }
     mavenCentral()
-    maven {
-        name = "GeckoLib"
-        url = "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/"
-    }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-
-    implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
 
     compileOnly fg.deobf("io.redspace:irons_spellbooks:${irons_spells_version}:api")
     runtimeOnly fg.deobf("io.redspace:irons_spellbooks:${irons_spells_version}")
